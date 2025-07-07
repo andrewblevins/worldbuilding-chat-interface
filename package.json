@@ -1,0 +1,41 @@
+{
+  "name": "worldbuilding-chat-interface",
+  "version": "0.1.0",
+  "description": "Simple chat interface for the Vibe Worldbuilding MCP - explore tools, create worlds, build together",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:backend": "cd backend && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000",
+    "build": "cd frontend && npm run build",
+    "setup": "npm install && cd frontend && npm install && cd ../backend && pip install -r requirements.txt",
+    "clean": "rm -rf node_modules frontend/node_modules backend/venv",
+    "lint": "cd frontend && npm run lint",
+    "type-check": "cd frontend && npm run type-check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andrewblevins/worldbuilding-chat-interface.git"
+  },
+  "keywords": [
+    "worldbuilding",
+    "mcp",
+    "chat",
+    "ai",
+    "creative-writing",
+    "fantasy",
+    "storytelling"
+  ],
+  "author": "Andrew Blevins",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/andrewblevins/worldbuilding-chat-interface/issues"
+  },
+  "homepage": "https://github.com/andrewblevins/worldbuilding-chat-interface#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
