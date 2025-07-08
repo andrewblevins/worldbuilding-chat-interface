@@ -20,6 +20,7 @@ class ChatMessage(BaseModel):
     content: str
     role: str = "user"
     stream: bool = False
+    conversation_history: List[Dict[str, str]] = []
 
 
 class ChatResponse(BaseModel):
@@ -30,11 +31,11 @@ class ChatResponse(BaseModel):
     files_created: List[str] = []
 
 
-async def stream_response(message_content: str) -> AsyncGenerator[str, None]:
+async def stream_response(message_content: str, conversation_history: List[Dict[str, str]] = None) -> AsyncGenerator[str, None]:
     """Stream the response from Claude with tool execution and thinking."""
     try:
         # Process the message and get the response
-        response = await claude_service.process_with_tools(message_content)
+        response = await claude_service.process_with_tools(message_content, conversation_history)
         
         # Get response data
         content = response["content"]
@@ -108,7 +109,7 @@ async def send_message(message: ChatMessage):
         if message.stream:
             # Return streaming response
             return StreamingResponse(
-                stream_response(message.content),
+                stream_response(message.content, message.conversation_history),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -119,7 +120,7 @@ async def send_message(message: ChatMessage):
             )
         else:
             # Return regular response
-            response = await claude_service.process_with_tools(message.content)
+            response = await claude_service.process_with_tools(message.content, message.conversation_history)
             
             return ChatResponse(
                 content=response["content"],

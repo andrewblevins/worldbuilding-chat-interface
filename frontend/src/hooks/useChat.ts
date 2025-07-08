@@ -56,15 +56,37 @@ export const useChat = () => {
       timestamp: Date.now(),
     };
 
-    // Add user message
-    setState(prev => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      isLoading: true,
-      error: null,
-    }));
+    // Add user message and prepare conversation history
+    setState(prev => {
+      const newMessages = [...prev.messages, userMessage];
+      
+      // Convert messages to conversation history format (exclude welcome message)
+      const conversationHistory = newMessages
+        .filter(msg => msg.id !== 'welcome') // Exclude welcome message
+        .slice(0, -1) // Exclude the current user message (will be sent separately)
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
+      return {
+        ...prev,
+        messages: newMessages,
+        isLoading: true,
+        error: null,
+        conversationHistory, // Store for use in API calls
+      };
+    });
 
     try {
+      // Get conversation history from state
+      const conversationHistory = state.messages
+        .filter(msg => msg.id !== 'welcome')
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+
       if (useStreaming) {
         // Handle streaming response
         const assistantMessageId = (Date.now() + 1).toString();
@@ -88,7 +110,10 @@ export const useChat = () => {
         }));
 
         // Process stream
-        for await (const chunk of apiService.sendMessageStream({ content })) {
+        for await (const chunk of apiService.sendMessageStream({ 
+          content, 
+          conversation_history: conversationHistory 
+        })) {
           if (chunk.type === 'thinking') {
             thinkingContent += chunk.content + ' ';
             
@@ -140,7 +165,10 @@ export const useChat = () => {
         }
       } else {
         // Handle regular response
-        const response = await apiService.sendMessage({ content });
+        const response = await apiService.sendMessage({ 
+          content, 
+          conversation_history: conversationHistory 
+        });
         
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),

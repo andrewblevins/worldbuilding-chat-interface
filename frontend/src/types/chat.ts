@@ -25,6 +25,7 @@ export interface ChatState {
 export interface SendMessageRequest {
   content: string;
   stream?: boolean;
+  conversation_history?: Array<{role: string; content: string}>;
 }
 
 export interface SendMessageResponse {

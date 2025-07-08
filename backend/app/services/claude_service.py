@@ -287,7 +287,8 @@ Remember: You have real tools at your disposal - use them actively to help users
                     if hasattr(content_block, 'text'):
                         response_content += content_block.text
                     elif hasattr(content_block, 'type') and content_block.type == 'thinking':
-                        thinking_content += content_block.content
+                        # ThinkingBlock uses 'thinking' attribute, not 'content'
+                        thinking_content += content_block.thinking
                     elif hasattr(content_block, 'type') and content_block.type == 'tool_use':
                         tool_calls.append({
                             "tool_id": content_block.id,
