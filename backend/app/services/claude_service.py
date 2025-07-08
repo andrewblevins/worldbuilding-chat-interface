@@ -92,7 +92,7 @@ Remember: You have real tools at your disposal - use them actively to help users
             
             # Call Claude API
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",  # Claude Sonnet 3.5
+                model="claude-sonnet-4-20250514",  # Claude Sonnet 4
                 max_tokens=2048,
                 temperature=0.7,
                 system=self.get_system_prompt(),
