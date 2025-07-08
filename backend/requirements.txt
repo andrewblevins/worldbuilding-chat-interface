@@ -6,6 +6,9 @@ python-multipart>=0.0.6
 pydantic>=2.5.0
 aiofiles>=23.2.1
 
+# CORS and middleware
+python-cors>=1.7.0
+
 # Environment variables
 python-dotenv>=1.0.0
 
@@ -19,8 +22,11 @@ orjson>=3.9.10
 # Logging
 loguru>=0.7.2
 
-# File watching for real-time updates
+# File watching
 watchdog>=3.0.0
+
+# AI/LLM integration
+anthropic>=0.57.0
 
 # Integration with vibe-worldbuilding-mcp
 # This will be installed via: pip install -e ../../vibe-worldbuilding-mcp

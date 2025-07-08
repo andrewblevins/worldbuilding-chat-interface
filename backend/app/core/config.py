@@ -7,8 +7,8 @@ from typing import List
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Load environment variables from .env file
+load_dotenv(dotenv_path="../.env")
 
 
 class Settings(BaseModel):
@@ -47,6 +47,12 @@ class Settings(BaseModel):
     
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
+    
+    # Frontend serving (for production)
+    SERVE_FRONTEND: bool = os.getenv("SERVE_FRONTEND", "false").lower() == "true"
+    
+    # Anthropic Claude API
+    ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
 
 # Create settings instance

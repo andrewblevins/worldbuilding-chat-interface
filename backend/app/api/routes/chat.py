@@ -5,6 +5,9 @@ Chat API routes for the Worldbuilding Chat Interface.
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
+from loguru import logger
+
+from ...services.claude_service import claude_service
 
 router = APIRouter()
 
@@ -25,12 +28,26 @@ class ChatResponse(BaseModel):
 
 @router.post("/send", response_model=ChatResponse)
 async def send_message(message: ChatMessage):
-    """Send a message to the chat interface."""
-    # TODO: Implement message processing and MCP tool integration
-    return ChatResponse(
-        content=f"Echo: {message.content}",
-        role="assistant"
-    )
+    """Send a message to the chat interface and get Claude's response."""
+    try:
+        logger.info(f"Processing chat message: {message.content[:100]}...")
+        
+        # Use Claude service to generate response and potentially execute tools
+        response = await claude_service.process_with_tools(message.content)
+        
+        return ChatResponse(
+            content=response["content"],
+            role=response["role"],
+            tool_calls=response.get("tool_calls", []),
+            files_created=response.get("files_created", [])
+        )
+        
+    except Exception as e:
+        logger.error(f"Error processing chat message: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing message: {str(e)}"
+        )
 
 
 @router.get("/tools")
