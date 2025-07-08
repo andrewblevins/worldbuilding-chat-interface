@@ -4,7 +4,7 @@ import type { ToolsResponse } from '../types/tools';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export interface StreamChunk {
-  type: 'content' | 'tools' | 'error' | 'end';
+  type: 'thinking' | 'content' | 'tools' | 'error' | 'end';
   content?: string;
   is_final?: boolean;
   tool_calls?: any[];

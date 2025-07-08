@@ -11,6 +11,7 @@ interface MessageListProps {
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   const isUser = message.role === 'user';
   const isStreaming = message.isStreaming;
+  const isThinking = message.isThinking;
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
@@ -25,15 +26,34 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
             {isUser ? '👤' : '🤖'}
           </div>
           
-          <div className="flex-1 min-w-0">
-            {/* Message content */}
-            <div
-              className={`rounded-2xl px-4 py-3 ${
-                isUser
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white border border-gray-200 text-gray-900 shadow-sm'
-              }`}
-            >
+          <div className="flex-1 min-w-0 space-y-2">
+            {/* Thinking content */}
+            {!isUser && (message.thinking || isThinking) && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-amber-600">🧠</span>
+                  <span className="text-sm font-medium text-amber-800">Thinking...</span>
+                </div>
+                {message.thinking && (
+                  <div className="text-sm text-amber-700 leading-relaxed whitespace-pre-wrap">
+                    {message.thinking}
+                    {isThinking && (
+                      <span className="inline-block w-2 h-4 bg-amber-500 animate-pulse ml-1" />
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Main message content */}
+            {(message.content || !isThinking) && (
+              <div
+                className={`rounded-2xl px-4 py-3 ${
+                  isUser
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white border border-gray-200 text-gray-900 shadow-sm'
+                }`}
+              >
               {isUser ? (
                 <div className="text-[15px] leading-relaxed whitespace-pre-wrap">
                   {message.content}
@@ -124,7 +144,8 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
                   </div>
                 </div>
               )}
-            </div>
+              </div>
+            )}
             
             {/* Timestamp */}
             <div className={`text-xs text-gray-400 mt-1 ${isUser ? 'text-right' : 'text-left'}`}>

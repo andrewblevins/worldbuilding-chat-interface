@@ -69,6 +69,7 @@ export const useChat = () => {
         // Handle streaming response
         const assistantMessageId = (Date.now() + 1).toString();
         let streamedContent = '';
+        let thinkingContent = '';
         let toolCalls: any[] = [];
         let filesCreated: string[] = [];
 
@@ -78,23 +79,37 @@ export const useChat = () => {
           messages: [...prev.messages, {
             id: assistantMessageId,
             content: '',
+            thinking: '',
             role: 'assistant',
             timestamp: Date.now(),
             isStreaming: true,
+            isThinking: false,
           }],
         }));
 
         // Process stream
         for await (const chunk of apiService.sendMessageStream({ content })) {
-          if (chunk.type === 'content') {
-            streamedContent += chunk.content + ' ';
+          if (chunk.type === 'thinking') {
+            thinkingContent += chunk.content + ' ';
             
-            // Update the streaming message
+            // Update the thinking message
             setState(prev => ({
               ...prev,
               messages: prev.messages.map(msg =>
                 msg.id === assistantMessageId
-                  ? { ...msg, content: streamedContent.trim() }
+                  ? { ...msg, thinking: thinkingContent.trim(), isThinking: true }
+                  : msg
+              ),
+            }));
+          } else if (chunk.type === 'content') {
+            streamedContent += chunk.content + ' ';
+            
+            // Switch from thinking to content and update the streaming message
+            setState(prev => ({
+              ...prev,
+              messages: prev.messages.map(msg =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: streamedContent.trim(), isThinking: false }
                   : msg
               ),
             }));
@@ -112,6 +127,7 @@ export const useChat = () => {
                   ? { 
                       ...msg, 
                       isStreaming: false,
+                      isThinking: false,
                       tool_calls: toolCalls,
                       files_created: filesCreated,
                     }

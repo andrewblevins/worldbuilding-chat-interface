@@ -5,7 +5,9 @@ export interface Message {
   timestamp: number;
   tool_calls?: ToolCall[];
   files_created?: string[];
+  thinking?: string;
   isStreaming?: boolean;
+  isThinking?: boolean;
 }
 
 export interface ToolCall {

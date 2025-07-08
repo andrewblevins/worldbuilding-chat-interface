@@ -20,9 +20,14 @@ class ClaudeService:
         
         if settings.ANTHROPIC_API_KEY:
             try:
-                self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+                self.client = Anthropic(
+                    api_key=settings.ANTHROPIC_API_KEY,
+                    default_headers={
+                        "anthropic-beta": "interleaved-thinking-2025-05-14"  # Enable thinking
+                    }
+                )
                 self.available = True
-                logger.info("Claude service initialized successfully")
+                logger.info("Claude service initialized successfully with thinking support")
             except Exception as e:
                 logger.error(f"Failed to initialize Claude service: {e}")
                 self.available = False
@@ -250,34 +255,39 @@ Remember: You have real tools at your disposal - use them actively to help users
             # Get available tools for Claude
             tools = self._get_claude_tools()
             
-            # Call Claude API with tools
+            # Call Claude API with tools and thinking
             if tools:
                 response = self.client.messages.create(
                     model="claude-sonnet-4-20250514",  # Claude Sonnet 4
                     max_tokens=2048,
-                    temperature=0.7,
+                    temperature=1.0,  # Required when thinking is enabled
                     system=self.get_system_prompt(),
                     messages=messages,
-                    tools=tools
+                    tools=tools,
+                    thinking={"type": "enabled", "budget_tokens": 10000}
                 )
             else:
                 # No tools available, use basic chat
                 response = self.client.messages.create(
                     model="claude-sonnet-4-20250514",  # Claude Sonnet 4
                     max_tokens=2048,
-                    temperature=0.7,
+                    temperature=1.0,  # Required when thinking is enabled
                     system=self.get_system_prompt(),
-                    messages=messages
+                    messages=messages,
+                    thinking={"type": "enabled", "budget_tokens": 10000}
                 )
             
-            # Extract response content and tool calls
+            # Extract response content, thinking, and tool calls
             response_content = ""
+            thinking_content = ""
             tool_calls = []
             
             if response.content:
                 for content_block in response.content:
                     if hasattr(content_block, 'text'):
                         response_content += content_block.text
+                    elif hasattr(content_block, 'type') and content_block.type == 'thinking':
+                        thinking_content += content_block.content
                     elif hasattr(content_block, 'type') and content_block.type == 'tool_use':
                         tool_calls.append({
                             "tool_id": content_block.id,
@@ -288,6 +298,7 @@ Remember: You have real tools at your disposal - use them actively to help users
             
             return {
                 "content": response_content,
+                "thinking": thinking_content,
                 "role": "assistant", 
                 "tool_calls": tool_calls,
                 "files_created": [],
@@ -410,9 +421,10 @@ Remember: You have real tools at your disposal - use them actively to help users
                     follow_up = self.client.messages.create(
                         model="claude-sonnet-4-20250514",
                         max_tokens=1024,
-                        temperature=0.7,
+                        temperature=1.0,  # Required when thinking is enabled
                         system=self.get_system_prompt(),
-                        messages=follow_up_messages
+                        messages=follow_up_messages,
+                        thinking={"type": "enabled", "budget_tokens": 5000}
                     )
                     
                     # Add follow-up content to response

@@ -31,17 +31,37 @@ class ChatResponse(BaseModel):
 
 
 async def stream_response(message_content: str) -> AsyncGenerator[str, None]:
-    """Stream the response from Claude with tool execution."""
+    """Stream the response from Claude with tool execution and thinking."""
     try:
         # Process the message and get the response
         response = await claude_service.process_with_tools(message_content)
         
-        # Simulate streaming by chunking the response
+        # Get response data
         content = response["content"]
+        thinking = response.get("thinking", "")
         tool_calls = response.get("tool_calls", [])
         files_created = response.get("files_created", [])
         
-        # Send the content in chunks
+        # Stream thinking content first if available
+        if thinking:
+            thinking_words = thinking.split(' ')
+            current_thinking_chunk = ""
+            
+            for i, word in enumerate(thinking_words):
+                current_thinking_chunk += word + " "
+                
+                # Send thinking chunks of 3-5 words
+                if len(current_thinking_chunk.split()) >= 4 or i == len(thinking_words) - 1:
+                    thinking_data = {
+                        "type": "thinking",
+                        "content": current_thinking_chunk.strip(),
+                        "is_final": i == len(thinking_words) - 1
+                    }
+                    yield f"data: {json.dumps(thinking_data)}\n\n"
+                    current_thinking_chunk = ""
+                    await asyncio.sleep(0.03)  # Faster for thinking
+        
+        # Send the main content in chunks
         words = content.split(' ')
         current_chunk = ""
         
