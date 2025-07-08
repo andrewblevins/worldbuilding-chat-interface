@@ -12,8 +12,11 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         reload_dirs=["app"],
-        reload_excludes=["*.pyc", "__pycache__", "*.log"],
+        reload_excludes=["*.pyc", "__pycache__", "*.log", "venv", ".git"],
+        reload_delay=0.25,  # Faster reload detection
         log_level="info",
         access_log=True,
-        use_colors=True
+        use_colors=True,
+        factory=False,  # Ensures fresh imports on reload
+        loop="auto"
     ) 
