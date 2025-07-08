@@ -5,13 +5,13 @@ export interface Message {
   timestamp: number;
   tool_calls?: ToolCall[];
   files_created?: string[];
+  isStreaming?: boolean;
 }
 
 export interface ToolCall {
   tool: string;
-  params: Record<string, any>;
-  result?: any;
-  status: 'pending' | 'completed' | 'failed';
+  input: Record<string, any>;
+  result?: string;
 }
 
 export interface ChatState {
@@ -22,11 +22,12 @@ export interface ChatState {
 
 export interface SendMessageRequest {
   content: string;
+  stream?: boolean;
 }
 
 export interface SendMessageResponse {
   content: string;
-  role: 'assistant';
-  tool_calls: ToolCall[];
-  files_created: string[];
+  role: string;
+  tool_calls?: ToolCall[];
+  files_created?: string[];
 } 
