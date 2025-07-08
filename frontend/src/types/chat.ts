@@ -1,6 +1,18 @@
+export interface ContentBlock {
+  type: 'text' | 'thinking' | 'tool_use' | 'tool_result';
+  text?: string;
+  thinking?: string;
+  id?: string;
+  name?: string;
+  input?: any;
+  tool_use_id?: string;
+  content?: string;
+  is_error?: boolean;
+}
+
 export interface Message {
   id: string;
-  content: string;
+  content: string | ContentBlock[];
   role: 'user' | 'assistant';
   timestamp: number;
   tool_calls?: ToolCall[];
@@ -8,6 +20,8 @@ export interface Message {
   thinking?: string;
   isStreaming?: boolean;
   isThinking?: boolean;
+  // Store original content blocks for API
+  content_blocks?: ContentBlock[];
 }
 
 export interface ToolCall {
@@ -25,7 +39,10 @@ export interface ChatState {
 export interface SendMessageRequest {
   content: string;
   stream?: boolean;
-  conversation_history?: Array<{role: string; content: string}>;
+  conversation_history?: Array<{
+    role: string; 
+    content: string | ContentBlock[];
+  }>;
 }
 
 export interface SendMessageResponse {
@@ -33,4 +50,5 @@ export interface SendMessageResponse {
   role: string;
   tool_calls?: ToolCall[];
   files_created?: string[];
+  content_blocks?: ContentBlock[];
 } 

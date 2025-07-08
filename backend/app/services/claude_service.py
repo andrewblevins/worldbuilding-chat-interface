@@ -223,7 +223,7 @@ Remember: You have real tools at your disposal - use them actively to help users
         
         return claude_tools
     
-    async def generate_response(self, message: str, conversation_history: List[Dict[str, str]] = None) -> Dict[str, Any]:
+    async def generate_response(self, message: str, conversation_history: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Generate a response using Claude AI with tool calling support.
         
@@ -247,7 +247,20 @@ Remember: You have real tools at your disposal - use them actively to help users
             # Prepare conversation history
             messages = []
             if conversation_history:
-                messages.extend(conversation_history)
+                # Process conversation history to handle content blocks properly
+                for msg in conversation_history:
+                    if isinstance(msg.get("content"), list):
+                        # Content blocks format - preserve as-is
+                        messages.append({
+                            "role": msg["role"],
+                            "content": msg["content"]
+                        })
+                    else:
+                        # Simple string content
+                        messages.append({
+                            "role": msg["role"], 
+                            "content": msg["content"]
+                        })
             
             # Add current user message
             messages.append({"role": "user", "content": message})
@@ -281,14 +294,23 @@ Remember: You have real tools at your disposal - use them actively to help users
             response_content = ""
             thinking_content = ""
             tool_calls = []
+            content_blocks = []
             
             if response.content:
                 for content_block in response.content:
                     if hasattr(content_block, 'text'):
                         response_content += content_block.text
+                        content_blocks.append({
+                            "type": "text",
+                            "text": content_block.text
+                        })
                     elif hasattr(content_block, 'type') and content_block.type == 'thinking':
                         # ThinkingBlock uses 'thinking' attribute, not 'content'
                         thinking_content += content_block.thinking
+                        content_blocks.append({
+                            "type": "thinking", 
+                            "thinking": content_block.thinking
+                        })
                     elif hasattr(content_block, 'type') and content_block.type == 'tool_use':
                         tool_calls.append({
                             "tool_id": content_block.id,
@@ -296,10 +318,17 @@ Remember: You have real tools at your disposal - use them actively to help users
                             "tool_input": content_block.input,
                             "status": "pending"
                         })
+                        content_blocks.append({
+                            "type": "tool_use",
+                            "id": content_block.id,
+                            "name": content_block.name,
+                            "input": content_block.input
+                        })
             
             return {
                 "content": response_content,
                 "thinking": thinking_content,
+                "content_blocks": content_blocks,  # Preserve for conversation history
                 "role": "assistant", 
                 "tool_calls": tool_calls,
                 "files_created": [],

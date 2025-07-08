@@ -20,7 +20,7 @@ class ChatMessage(BaseModel):
     content: str
     role: str = "user"
     stream: bool = False
-    conversation_history: List[Dict[str, str]] = []
+    conversation_history: List[Dict[str, Any]] = []
 
 
 class ChatResponse(BaseModel):
@@ -29,6 +29,7 @@ class ChatResponse(BaseModel):
     role: str = "assistant"
     tool_calls: List[Dict[str, Any]] = []
     files_created: List[str] = []
+    content_blocks: List[Dict[str, Any]] = []
 
 
 async def stream_response(message_content: str, conversation_history: List[Dict[str, str]] = None) -> AsyncGenerator[str, None]:
@@ -40,6 +41,7 @@ async def stream_response(message_content: str, conversation_history: List[Dict[
         # Get response data
         content = response["content"]
         thinking = response.get("thinking", "")
+        content_blocks = response.get("content_blocks", [])
         tool_calls = response.get("tool_calls", [])
         files_created = response.get("files_created", [])
         
@@ -85,7 +87,8 @@ async def stream_response(message_content: str, conversation_history: List[Dict[
             tool_data = {
                 "type": "tools",
                 "tool_calls": tool_calls,
-                "files_created": files_created
+                "files_created": files_created,
+                "content_blocks": content_blocks
             }
             yield f"data: {json.dumps(tool_data)}\n\n"
         
@@ -126,7 +129,8 @@ async def send_message(message: ChatMessage):
                 content=response["content"],
                 role=response["role"],
                 tool_calls=response.get("tool_calls", []),
-                files_created=response.get("files_created", [])
+                files_created=response.get("files_created", []),
+                content_blocks=response.get("content_blocks", [])
             )
         
     except Exception as e:

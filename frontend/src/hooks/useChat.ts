@@ -79,12 +79,14 @@ export const useChat = () => {
     });
 
     try {
-      // Get conversation history from state
+      // Get conversation history from state - preserve content blocks for proper API format
       const conversationHistory = state.messages
         .filter(msg => msg.id !== 'welcome')
         .map(msg => ({
           role: msg.role,
-          content: msg.content
+          // Use content_blocks if available (for assistant messages with thinking),
+          // otherwise use simple content string (for user messages)
+          content: msg.content_blocks || (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content))
         }));
 
       if (useStreaming) {
@@ -94,6 +96,7 @@ export const useChat = () => {
         let thinkingContent = '';
         let toolCalls: any[] = [];
         let filesCreated: string[] = [];
+        let contentBlocks: any[] = [];
 
         // Add initial empty assistant message
         setState(prev => ({
@@ -141,6 +144,7 @@ export const useChat = () => {
           } else if (chunk.type === 'tools') {
             toolCalls = chunk.tool_calls || [];
             filesCreated = chunk.files_created || [];
+            contentBlocks = chunk.content_blocks || [];
           } else if (chunk.type === 'error') {
             throw new Error(chunk.error);
           } else if (chunk.type === 'end') {
@@ -155,6 +159,7 @@ export const useChat = () => {
                       isThinking: false,
                       tool_calls: toolCalls,
                       files_created: filesCreated,
+                      content_blocks: contentBlocks,
                     }
                   : msg
               ),
@@ -177,6 +182,7 @@ export const useChat = () => {
           timestamp: Date.now(),
           tool_calls: response.tool_calls,
           files_created: response.files_created,
+          content_blocks: response.content_blocks,
         };
 
         setState(prev => ({

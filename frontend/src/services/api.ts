@@ -9,6 +9,7 @@ export interface StreamChunk {
   is_final?: boolean;
   tool_calls?: any[];
   files_created?: string[];
+  content_blocks?: any[];
   error?: string;
 }
 
