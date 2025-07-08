@@ -13,9 +13,11 @@ from typing import Dict, Any, List, Optional
 from loguru import logger
 
 # Add the vibe-worldbuilding MCP to the Python path
-MCP_PATH = Path(__file__).parent.parent.parent.parent / "vibe-worldbuilding-mcp"
+MCP_PATH = Path(__file__).parent.parent.parent.parent.parent / "vibe-worldbuilding-mcp"
 if MCP_PATH.exists():
     sys.path.insert(0, str(MCP_PATH))
+else:
+    logger.warning(f"MCP path not found at: {MCP_PATH}")
 
 try:
     # Import MCP tool handlers
@@ -26,9 +28,17 @@ try:
     from vibe_worldbuilding.tools.site import handle_site_tool, SITE_HANDLERS
     MCP_AVAILABLE = True
     logger.info("Successfully imported vibe-worldbuilding MCP tools")
+    total_tools = len(WORLD_HANDLERS) + len(TAXONOMY_HANDLERS) + len(ENTRY_HANDLERS) + len(IMAGE_HANDLERS) + len(SITE_HANDLERS)
+    logger.info(f"Available tools: {total_tools} tools loaded")
 except ImportError as e:
     logger.warning(f"Could not import MCP tools: {e}")
     MCP_AVAILABLE = False
+    # Define empty handlers for graceful degradation
+    WORLD_HANDLERS = {}
+    TAXONOMY_HANDLERS = {}
+    ENTRY_HANDLERS = {}
+    IMAGE_HANDLERS = {}
+    SITE_HANDLERS = {}
 
 
 class MCPClient:
@@ -39,6 +49,7 @@ class MCPClient:
         self.tool_handlers = {}
         
         if self.available:
+            # Combine all tool handlers
             self.tool_handlers.update({
                 **WORLD_HANDLERS,
                 **TAXONOMY_HANDLERS,
@@ -46,14 +57,29 @@ class MCPClient:
                 **IMAGE_HANDLERS,
                 **SITE_HANDLERS,
             })
+            logger.info(f"MCP client initialized with {len(self.tool_handlers)} tools")
+        else:
+            logger.warning("MCP client initialized without tools - running in demo mode")
             
     async def execute_tool(self, tool_name: str, parameters: Dict[str, Any]) -> Dict[str, Any]:
         """Execute a specific MCP tool with the given parameters."""
         if not self.available:
-            raise RuntimeError("MCP tools are not available")
+            return {
+                "success": False,
+                "result": "MCP tools are not available - please check installation",
+                "error": "MCP not available",
+                "tool_name": tool_name,
+                "parameters": parameters
+            }
             
         if tool_name not in self.tool_handlers:
-            raise ValueError(f"Unknown tool: {tool_name}")
+            return {
+                "success": False,
+                "result": f"Unknown tool: {tool_name}. Available tools: {', '.join(self.tool_handlers.keys())}",
+                "error": f"Tool {tool_name} not found",
+                "tool_name": tool_name,
+                "parameters": parameters
+            }
             
         try:
             # Route to appropriate handler based on tool name
@@ -68,17 +94,26 @@ class MCPClient:
             elif tool_name in SITE_HANDLERS:
                 result = await handle_site_tool(tool_name, parameters)
             else:
-                raise ValueError(f"No handler found for tool: {tool_name}")
+                return {
+                    "success": False,
+                    "result": f"No handler found for tool: {tool_name}",
+                    "error": f"Handler not found for {tool_name}",
+                    "tool_name": tool_name,
+                    "parameters": parameters
+                }
                 
             # Convert MCP result to our format
             if isinstance(result, list) and len(result) > 0:
                 # MCP returns a list of TextContent objects
                 text_result = result[0].text if hasattr(result[0], 'text') else str(result[0])
                 
+                # Extract file information from the result
+                files_created = self._extract_files_from_result(text_result)
+                
                 return {
                     "success": True,
                     "result": text_result,
-                    "files_created": self._extract_files_from_result(text_result),
+                    "files_created": files_created,
                     "tool_name": tool_name,
                     "parameters": parameters
                 }
@@ -116,19 +151,23 @@ class MCPClient:
         saved_pattern = r"[Ss]aved to[:\s]+([^\s\n]+)"
         files.extend(re.findall(saved_pattern, result_text))
         
+        # Pattern for "Generated: path/to/file"
+        generated_pattern = r"[Gg]enerated[:\s]+([^\s\n]+)"
+        files.extend(re.findall(generated_pattern, result_text))
+        
         # Pattern for file paths in general (*.md, *.png, etc.)
         file_pattern = r"([^\s]+\.[a-zA-Z]{2,4})"
         potential_files = re.findall(file_pattern, result_text)
         
         # Filter to likely file paths
         for file in potential_files:
-            if any(ext in file for ext in ['.md', '.png', '.jpg', '.json', '.html']):
+            if any(ext in file for ext in ['.md', '.png', '.jpg', '.json', '.html', '.txt']):
                 files.append(file)
         
         return list(set(files))  # Remove duplicates
     
     def get_available_tools(self) -> List[Dict[str, Any]]:
-        """Get list of available MCP tools."""
+        """Get list of available MCP tools with descriptions."""
         if not self.available:
             return []
             
@@ -139,41 +178,49 @@ class MCPClient:
             # World tools
             "instantiate_world": {
                 "category": "world",
-                "description": "Create a new world project with foundation content"
-            },
-            "list_world_files": {
-                "category": "world", 
-                "description": "List all files in a world directory"
+                "description": "Create a new world project with foundation content and directory structure"
             },
             
             # Taxonomy tools
-            "generate_taxonomy_guidelines": {
+            "create_taxonomy": {
                 "category": "taxonomy",
-                "description": "Generate custom guidelines for a taxonomy type"
+                "description": "Create organized category folders for your world"
             },
-            "create_taxonomy_folders": {
+            "create_taxonomy_with_llm_guidelines": {
                 "category": "taxonomy",
-                "description": "Create organized categories for your world"
+                "description": "Create taxonomy with AI-generated custom guidelines"
             },
             
             # Entry tools
             "create_world_entry": {
                 "category": "entry",
-                "description": "Add detailed entries to your world"
-            },
-            "identify_stub_candidates": {
-                "category": "entry",
-                "description": "Find entities that need their own entries"
+                "description": "Add detailed entries to your world with auto-stub generation"
             },
             "create_stub_entries": {
                 "category": "entry", 
-                "description": "Automatically create placeholder entries"
+                "description": "Create placeholder entries for referenced entities"
+            },
+            "generate_entry_descriptions": {
+                "category": "entry",
+                "description": "Generate descriptions for multiple entries"
+            },
+            "add_entry_frontmatter": {
+                "category": "entry",
+                "description": "Add metadata frontmatter to entries"
+            },
+            "analyze_world_consistency": {
+                "category": "entry",
+                "description": "Check your world for logical consistency and coherence"
             },
             
             # Image tools
             "generate_image_from_markdown_file": {
                 "category": "image",
                 "description": "Create visual representations of your content"
+            },
+            "generate_image_prompt_for_entry": {
+                "category": "image",
+                "description": "Generate optimized image prompts for entries"
             },
             
             # Site tools  
@@ -192,9 +239,14 @@ class MCPClient:
         
         return tools
 
+    def get_tool_by_name(self, tool_name: str) -> Optional[Dict[str, Any]]:
+        """Get details for a specific tool by name."""
+        available_tools = self.get_available_tools()
+        for tool in available_tools:
+            if tool["name"] == tool_name:
+                return tool
+        return None
 
-# Global MCP client instance
-mcp_client = MCPClient()
 
-# Export for use in other modules
-__all__ = ["mcp_client", "MCPClient"] 
+# Create a global instance
+mcp_client = MCPClient() 

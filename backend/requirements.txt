@@ -28,6 +28,9 @@ watchdog>=3.0.0
 # AI/LLM integration
 anthropic>=0.57.0
 
+# MCP (Model Context Protocol) integration
+mcp>=0.1.0
+
 # Integration with vibe-worldbuilding-mcp
 # This will be installed via: pip install -e ../../vibe-worldbuilding-mcp
 # mcp>=0.1.0
