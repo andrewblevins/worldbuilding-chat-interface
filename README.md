@@ -77,7 +77,21 @@ worldbuilding-chat-interface/
 - Python 3.11+
 - [Vibe Worldbuilding MCP](https://github.com/jasnonaz/vibe-worldbuilding-mcp)
 
-### Development Setup
+### One-Command Setup & Start
+
+```bash
+# From the parent directory containing both repos
+./start-chat.sh
+```
+
+That's it! The script will:
+- ✅ Install all dependencies (first run only)
+- ✅ Create Python virtual environment
+- ✅ Set up environment files
+- ✅ Start both frontend and backend servers
+- ✅ Show you the URLs to access everything
+
+### Manual Setup (Alternative)
 
 ```bash
 # Clone the repository
