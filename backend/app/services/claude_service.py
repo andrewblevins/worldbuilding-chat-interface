@@ -433,11 +433,19 @@ Remember: You have real tools at your disposal - use them actively to help users
             if tool_results:
                 try:
                     # Prepare messages with tool results
-                    follow_up_messages = conversation_history or []
+                    follow_up_messages = []
+                    
+                    # Include the conversation history
+                    if conversation_history:
+                        follow_up_messages.extend(conversation_history)
+                    
+                    # Add the current user message
                     follow_up_messages.append({"role": "user", "content": message})
+                    
+                    # Add the assistant's response with content blocks (including thinking and tool use)
                     follow_up_messages.append({
                         "role": "assistant", 
-                        "content": response.get("content", "")
+                        "content": response.get("content_blocks", response.get("content", ""))
                     })
                     
                     # Add tool results
