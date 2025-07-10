@@ -56,38 +56,46 @@ export const useChat = () => {
       timestamp: Date.now(),
     };
 
-    // Add user message and prepare conversation history
+    // Add user message and get updated conversation history
+    let conversationHistory: any[] = [];
+    
     setState(prev => {
       const newMessages = [...prev.messages, userMessage];
       
-      // Convert messages to conversation history format (exclude welcome message)
-      const conversationHistory = newMessages
+      // Convert messages to conversation history format (exclude welcome message and current user message)
+      conversationHistory = newMessages
         .filter(msg => msg.id !== 'welcome') // Exclude welcome message
+        .filter(msg => !msg.isStreaming) // Exclude messages that are still streaming
         .slice(0, -1) // Exclude the current user message (will be sent separately)
         .map(msg => ({
           role: msg.role,
-          content: msg.content
-        }));
+          // Use content_blocks if available (for assistant messages with thinking),
+          // otherwise use simple content string (for user messages)
+          content: msg.content_blocks || (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content))
+        }))
+        .filter(msg => {
+          // Only include messages with non-empty content
+          const content = msg.content;
+          if (typeof content === 'string') {
+            return content.trim().length > 0;
+          }
+          if (Array.isArray(content)) {
+            return content.length > 0 && content.some(block => 
+              block.text && block.text.trim().length > 0
+            );
+          }
+          return false;
+        });
 
       return {
         ...prev,
         messages: newMessages,
         isLoading: true,
         error: null,
-        conversationHistory, // Store for use in API calls
       };
     });
 
     try {
-      // Get conversation history from state - preserve content blocks for proper API format
-      const conversationHistory = state.messages
-        .filter(msg => msg.id !== 'welcome')
-        .map(msg => ({
-          role: msg.role,
-          // Use content_blocks if available (for assistant messages with thinking),
-          // otherwise use simple content string (for user messages)
-          content: msg.content_blocks || (typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content))
-        }));
 
       if (useStreaming) {
         // Handle streaming response
