@@ -98,6 +98,16 @@ async def health_check():
         "environment": settings.ENVIRONMENT
     }
 
+@app.get("/version")
+async def version_check():
+    """Version check endpoint to test auto-reload."""
+    import time
+    return {
+        "version": "dev-auto-reload", 
+        "reload_test": int(time.time()),
+        "debug_logs_enabled": True
+    }
+
 # Serve static files in production
 if settings.SERVE_FRONTEND:
     frontend_dist = Path("frontend/dist")
