@@ -80,8 +80,11 @@ worldbuilding-chat-interface/
 ### One-Command Setup & Start
 
 ```bash
-# From the parent directory containing both repos
+# From either directory:
 ./start-chat.sh
+
+# Works from parent directory: world-building/start-chat.sh
+# Or from project directory: world-building-chat-interface/start-chat.sh
 ```
 
 That's it! The script will:
@@ -112,7 +115,8 @@ npm run dev                    # Starts both frontend and backend
 ```bash
 # Backend (.env)
 FAL_KEY=your_fal_api_key_here
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
+ALLOWED_ORIGINS=["http://localhost:5173"]
 
 # Frontend (.env)
 VITE_API_URL=http://localhost:8000
