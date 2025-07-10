@@ -455,6 +455,12 @@ Remember: You have real tools at your disposal - use them actively to help users
                             "content": [tool_result]  # Tool result is already properly formatted
                         })
                     
+                    # Log the messages being sent for debugging
+                    logger.info(f"Sending follow-up messages to Claude: {len(follow_up_messages)} messages")
+                    for i, msg in enumerate(follow_up_messages):
+                        msg_preview = str(msg)[:200] + "..." if len(str(msg)) > 200 else str(msg)
+                        logger.info(f"Message {i}: {msg_preview}")
+                    
                     # Get Claude's follow-up response
                     follow_up = self.client.messages.create(
                         model="claude-sonnet-4-20250514",

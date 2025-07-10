@@ -108,6 +108,10 @@ async def send_message(message: ChatMessage):
     """Send a message to the chat interface and get Claude's response."""
     try:
         logger.info(f"Processing chat message: {message.content[:100]}... (stream: {message.stream})")
+        logger.info(f"Conversation history length: {len(message.conversation_history)}")
+        if message.conversation_history:
+            for i, hist_msg in enumerate(message.conversation_history[:3]):  # Log first 3 messages
+                logger.info(f"History[{i}]: role={hist_msg.get('role')}, content_preview={str(hist_msg.get('content'))[:100]}...")
         
         if message.stream:
             # Return streaming response
