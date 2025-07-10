@@ -23,8 +23,20 @@ cleanup() {
 # Trap cleanup on script exit
 trap cleanup EXIT INT TERM
 
-# Change to chat interface directory
-cd "$(dirname "$0")/world-building-chat-interface"
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Determine the project root directory
+if [[ "$SCRIPT_DIR" == *"/world-building-chat-interface" ]]; then
+    # Script is inside the chat interface directory
+    PROJECT_DIR="$SCRIPT_DIR"
+else
+    # Script is in parent directory
+    PROJECT_DIR="$SCRIPT_DIR/world-building-chat-interface"
+fi
+
+# Change to project directory
+cd "$PROJECT_DIR"
 
 # Check if initial setup is needed
 if [ ! -d "node_modules" ] || [ ! -d "backend/venv" ]; then
