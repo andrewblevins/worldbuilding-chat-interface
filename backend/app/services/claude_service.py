@@ -448,11 +448,11 @@ Remember: You have real tools at your disposal - use them actively to help users
                         "content": response.get("content_blocks", response.get("content", ""))
                     })
                     
-                    # Add tool results
+                    # Add tool results as properly formatted content blocks
                     for tool_result in tool_results:
                         follow_up_messages.append({
                             "role": "user",
-                            "content": tool_result["content"]
+                            "content": [tool_result]  # Tool result is already properly formatted
                         })
                     
                     # Get Claude's follow-up response
